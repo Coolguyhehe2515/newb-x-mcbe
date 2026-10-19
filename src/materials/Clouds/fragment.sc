@@ -35,7 +35,7 @@ void main() {
       #endif
 
       color.a *= v_color0.a;
-    #else
+    #elif NL_CLOUD_TYPE == 3
       vDir.xz *= 0.3 + v_color0.w; // height parallax
 
       vec2 p = (vDir.xz)/(0.015 + 0.035*abs(vDir.y));
@@ -50,6 +50,11 @@ void main() {
       #endif
 
       color.a *= smoothstep(0.0, 0.7, vDir.y);
+    #else
+      vec2 dirP = vDir.xz*(0.3 + v_color0.w)/(0.015 + 0.035*abs(vDir.y));
+      vec2 camP = 0.035*CameraPosition.xz;
+      color = renderClouds25D(dirP, camP, v_color2.w, v_color1.w, v_color2.rgb, v_color1.rgb);
+      color.a *= smoothstep(0.0, 0.35, vDir.y);
     #endif
 
     color.rgb = colorCorrection(color.rgb);
