@@ -142,6 +142,37 @@ vec4 renderClouds(vec2 p, float t, float rain, vec3 horizonCol, vec3 zenithCol, 
   return col;
 }
 
+float cloud4Noise(vec2 p) {
+  float n = noise2D(p);
+  n += 0.5*noise2D(1.9*p.yx + 5.3);
+  return n*0.6667;
+}
+
+vec4 renderClouds25D(vec2 dirP, vec2 camP, float t, float rain, vec3 horizonCol, vec3 zenithCol) {
+  vec2 wind = vec2(1.0, 0.4)*(t*NL_CLOUD4_SPEED);
+  float thr = NL_CLOUD4_COVERAGE - 0.15*rain;
+
+  vec2 p0 = (dirP + camP)*NL_CLOUD4_SCALE + wind;
+  vec2 p1 = (dirP*(1.0 + NL_CLOUD4_DEPTH) + camP)*NL_CLOUD4_SCALE + wind;
+
+  float n0 = cloud4Noise(p0);
+  float n1 = cloud4Noise(p1);
+
+  float a0 = smoothstep(thr, thr + NL_CLOUD4_SOFTNESS, n0);
+  float a1 = smoothstep(thr + 0.1, thr + 0.1 + NL_CLOUD4_SOFTNESS, n1);
+
+  float shade = clamp(0.25*a0 + 0.55*a1 + 1.5*max(n1 - n0, 0.0), 0.0, 1.0);
+
+  vec3 litCol = horizonCol + horizonCol.ggg;
+  vec3 shadeCol = 0.5*(zenithCol + zenithCol.ggg);
+
+  vec4 col;
+  col.rgb = mix(litCol, shadeCol, shade*NL_CLOUD4_SHADOW);
+  col.rgb *= 1.0 - 0.7*rain;
+  col.a = max(a0, a1);
+  return col;
+}
+
 // aurora is rendered on clouds layer
 #ifdef NL_AURORA
 vec4 renderAurora(vec3 p, float t, float rain, float dayFactor) {
